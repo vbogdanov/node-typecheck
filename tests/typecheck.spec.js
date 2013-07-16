@@ -1,0 +1,167 @@
+/* jshint globalstrict: true */
+/* global require: false */
+/* global describe: false */
+/* global it: false */
+/* global expect: false */
+/* global process: false */
+/* global console: false */
+/* jshint maxstatements: 30 */
+"use strict";
+
+var typecheck = require("../index.js");
+
+describe("typecheck", function () {
+  it("checks primitives successfully", function () {
+    expect(typecheck.check("array", []))        .toBe(true);
+    expect(typecheck.check("array", arguments)) .toBe(false);
+
+    expect(typecheck.check("number", 3.14))     .toBe(true);
+    expect(typecheck.check("number", "3.14"))   .toBe(false);
+
+    expect(typecheck.check("string", "hi"))     .toBe(true);
+    expect(typecheck.check("string", 5))        .toBe(false);
+
+    expect(typecheck.check("date", new Date())) .toBe(true);
+    expect(typecheck.check("date", "2000-10-10")).toBe(false);
+
+    var myfn = function (a, b, c) {};
+    expect(typecheck.check("function", myfn))   .toBe(true);
+    expect(typecheck.check("function", 5))      .toBe(false);
+    expect(typecheck.check("function.args(3)", myfn)).toBe(true);
+  });
+
+  it("checks arrays based on type definition", function () {
+    expect(typecheck.check([""], [])).toBe(true);
+
+    expect(typecheck.check([".notEmpty()"], [])).toBe(false);
+    expect(typecheck.check([".notEmpty()"], [1])).toBe(true);
+
+    var undef;
+    expect(typecheck.check([".exists()"], null )).toBe(false);
+    expect(typecheck.check([".exists()"], undef)).toBe(false);
+    expect(typecheck.check([".exists()"], []   )).toBe(true);
+
+    expect(typecheck.check(["", "number"], [1, 2, 3])).toBe(true);
+    expect(typecheck.check(["", "string"], ["h", "2", "3"])).toBe(true);
+    expect(typecheck.check(["", "number", "string"], [1, "2", 3])).toBe(true);
+    expect(typecheck.check(["", "number", "string"], ["1", "2", 3])).toBe(false);
+    expect(typecheck.check(
+      ["", "number", "string", "date", ["", "array"]],
+      [1, "2", new Date(), [[]]]
+    )).toBe(true);
+
+    expect(typecheck.check(
+      ["", "number", "string", "date", [".notEmpty()"]],
+      [1, "2", new Date(), [1]]
+    )).toBe(true);
+  });
+
+  it("checks object properties as well as object existance", function () {
+    var TypeA = {
+      "hello":"string.exists()",
+      "greet":"function.args(1)"
+    };
+    var TypeB = {
+      "bye":"string.exists()",
+      "sayit":"function.args(1)"
+    };
+
+    var A = {
+      "hello":"Hello my dear friend, ",
+      "greet": function (name) {
+        console.log(this.hello + name);
+      }
+    };
+    var B = {
+      "bye":"Goodbye, ",
+      "sayit":function (name) {
+        console.log(this.bye + name);
+      }
+    };
+
+    expect(typecheck.check(TypeA, A)).toBe(true);
+    expect(typecheck.check(TypeB, A)).toBe(false);
+    expect(typecheck.check(TypeA, B)).toBe(false);
+    expect(typecheck.check(TypeB, B)).toBe(true);
+  });
+
+  it("checks object properties recursively", function () {
+    var TypeC = {
+      "simple": "number",
+      "complicated": {
+        "hello": "string"
+      },
+      "anarray": [".notEmpty()", "number"]
+    };
+    var C = {
+      "simple": 3,
+      "complicated": {
+        "hello": "world"
+      },
+      "anarray": [1, 2, 3]
+    };
+
+    expect(typecheck.check(TypeC, C)).toBe(true);
+
+    var D = {
+      "simple": 3,
+      "complicated": {
+        "hello": 5
+      },
+      "anarray": [1, 2, 3]
+    };
+    expect(typecheck.check(TypeC, D)).toBe(false);
+  });
+
+  it("throws exception when assert is invoked with not fulfilling argments", function () {
+    expect(function () {
+      typecheck.assert("number", "5");
+    }).toThrow();
+    expect(function () {
+      typecheck.assert("number", 5);
+    }).not.toThrow();
+  });
+
+  it("matches possible nulls or undefined using noneOr", function () {
+    var StrictType = {
+      "simple": "number",
+      "complicated": {
+        "hello": "string"
+      },
+      "anarray": [".notEmpty()", "number"]
+    };
+
+    var NoneType = {
+      "simple": "number",
+      "complicated": {
+        "hello": typecheck.noneOr("string")
+      },
+      "anarray": [".notEmpty()", "number"]
+    };
+
+    var E = {
+      "simple": 3,
+      "anarray": [1, 2, 3]
+    };
+
+    var E1 = Object.create(E);
+    E1.complicated = { "hello": "world" };
+    expect(typecheck.check(StrictType, E1)).toBe(true);
+    expect(typecheck.check(NoneType, E1)).toBe(true);
+
+    var E2 = Object.create(E);
+    E2.complicated = {}; //undefined
+    expect(typecheck.check(StrictType, E2)).toBe(false);
+    expect(typecheck.check(NoneType, E2)).toBe(true);
+
+    var E3 = Object.create(E);
+    E3.complicated = { "hello": null };
+    expect(typecheck.check(StrictType, E3)).toBe(false);
+    expect(typecheck.check(NoneType, E3)).toBe(true);
+
+    var E4 = Object.create(E);
+    E4.complicated = { "hello": 4 };
+    expect(typecheck.check(StrictType, E4)).toBe(false);
+    expect(typecheck.check(NoneType, E4)).toBe(false);
+  });
+});
