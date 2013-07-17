@@ -83,7 +83,7 @@ define([], function () {
    * Defines a named type. The second argument is used to as parameter for #buildCheck, the third one is list of constraint functions.
    * argument1: name
    * argument2: definition
-   * argument3: constraint defining functions
+   * argument3: object with constraint defining functions
    * example:
    * <code>
 
@@ -103,6 +103,17 @@ define([], function () {
       isInstance: tc.buildCheck(definition),
       constraints: limitations
     };
+  };
+
+  /**
+    * This method adds constraint to existing type
+    *
+    */
+  tc.defineConstraint = function (name, limitName, limitFn) {
+    var typeDesc = registry[name];
+    if (tc.none(typeDesc)) throw "Unknown Type: " + name;
+    typeDesc.constraints = typeDesc.constraints || Object.create(null);
+    typeDesc.constraints[limitName] = limitFn;
   };
 
   Object.freeze(tc);
@@ -131,7 +142,7 @@ define([], function () {
       alter[key] = tc.buildCheck(descr[key]);
     }
     return function (item) {
-      return objCheck(item) && propertiesCheck(alter, item);
+      return (! tc.none(item)) && objCheck(item) && propertiesCheck(alter, item);
     };
   }
 
@@ -153,7 +164,7 @@ define([], function () {
       alter.push(tc.buildCheck(definition[i]));
     }
     return function (item) {
-      return arrayLimits(item) && arrayElementsCheck(alter, item);
+      return (! tc.none(item)) && arrayLimits(item) && arrayElementsCheck(alter, item);
     };
   }
 
@@ -182,7 +193,7 @@ define([], function () {
 
       var EVALED = Object.create(type.constraints);
       EVALED.value = item;
-      return type.isInstance(item) && evaluate(evalString, EVALED);
+      return (! tc.none(item)) && type.isInstance(item) && evaluate(evalString, EVALED);
     };
   }
 

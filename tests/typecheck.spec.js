@@ -164,4 +164,25 @@ describe("typecheck", function () {
     expect(typecheck.check(StrictType, E4)).toBe(false);
     expect(typecheck.check(NoneType, E4)).toBe(false);
   });
+
+  it("adds new types using typecheck.define(name, typedef, constraints)", function () {
+    var StrictType = {
+      "simple": "number",
+      "complicated": {
+        "hello": "string"
+      },
+      "anarray": [".notEmpty()", "number"]
+    };
+
+    var E = {
+      "simple": 3,
+      "anarray": [1, 2, 3],
+      "complicated": { "hello": "world" }
+    };
+
+    typecheck.define("mytype", StrictType, {});
+
+    expect(typecheck.check("mytype", E)).toBe(true);
+  });
+
 });
