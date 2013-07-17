@@ -1,20 +1,20 @@
 {
   "name": "typecheck",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "jasmine-node tests/"
   },
   "dependencies":{
-    "requirejs":"latest",
-    "amdefine":"latest"
+    "requirejs":"2.1.8",
+    "amdefine":"0.0.5"
   },
   "devDependencies": {
     "jasmine-node": "latest",
     "jshint": "latest"
   },
-  "repository": "",
+  "repository": "git@github.com:vbogdanov/node-typecheck.git",
   "author": "Valeri Bogdanov",
   "license": "BSD"
 }
