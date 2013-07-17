@@ -185,4 +185,35 @@ describe("typecheck", function () {
     expect(typecheck.check("mytype", E)).toBe(true);
   });
 
+  it("adds new types using typecheck.define(name, typedef, constraints)", function () {
+    var NumberContainer = {
+      "value": "number"
+    };
+
+    var constraints = {
+      positive: function () { return this.value.value > 0; },
+      negative: function () { return this.value.value < 0; }
+    };
+
+    var pos = { value: 5 };
+    var zero = { value: 0 };
+    var neg = { value: -5 };
+
+    typecheck.define("numcontainer", NumberContainer, constraints);
+
+    expect(typecheck.check("numcontainer.positive()", pos)).toBe(true);
+    expect(typecheck.check("numcontainer.positive()", zero)).toBe(false);
+    expect(typecheck.check("numcontainer.positive()", neg)).toBe(false);
+
+    expect(typecheck.check("numcontainer.negative()", pos)).toBe(false);
+    expect(typecheck.check("numcontainer.negative()", zero)).toBe(false);
+    expect(typecheck.check("numcontainer.negative()", neg)).toBe(true);
+
+    typecheck.defineConstraint("numcontainer", "zero", function () { return this.value.value === 0; });
+
+    expect(typecheck.check("numcontainer.zero()", pos)).toBe(false);
+    expect(typecheck.check("numcontainer.zero()", zero)).toBe(true);
+    expect(typecheck.check("numcontainer.zero()", neg)).toBe(false);
+  });
+
 });
