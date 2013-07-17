@@ -8,7 +8,7 @@
 /* jshint maxstatements: 30 */
 "use strict";
 
-var typecheck = require("../index.js");
+var typecheck = require("../index.js")();
 
 describe("typecheck", function () {
   it("checks primitives successfully", function () {
