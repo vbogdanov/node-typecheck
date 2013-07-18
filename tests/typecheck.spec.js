@@ -244,14 +244,12 @@ describe("typecheck", function () {
     };
 
     var expected = {
-      _: {
-        "hello": "trotinetka",
-        "age": 18
-      }
+      "hello": "trotinetka",
+      "age": 18
     };
 
     var defaultVal = {};
     typecheck.define("defaultTest", type, {}, defaultVal);
-    expect(defaultVal).toEqual(expected);
+    expect(defaultVal._).toEqual(expected);
   });
 });
