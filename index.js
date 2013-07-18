@@ -99,6 +99,7 @@ define([], function () {
      * argument1: name
      * argument2: definition
      * argument3: object with constraint defining functions
+     * returns: default values object
      * example:
      * <code>
 
@@ -113,11 +114,13 @@ define([], function () {
 
       </code>
      */
-    tc.define = function (name, definition, limitations, _default) {
+    tc.define = function (name, definition, limitations) {
+      var _default = {};
       registry[name] = {
         isInstance: tc.buildCheck(definition, _default),
         constraints: limitations || null
       };
+      return _default._;
     };
 
     /**

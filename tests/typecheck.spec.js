@@ -248,8 +248,7 @@ describe("typecheck", function () {
       "age": 18
     };
 
-    var defaultVal = {};
-    typecheck.define("defaultTest", type, {}, defaultVal);
-    expect(defaultVal._).toEqual(expected);
+    var defaultVal = typecheck.define("defaultTest", type, {});
+    expect(defaultVal).toEqual(expected);
   });
 });
