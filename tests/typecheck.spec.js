@@ -216,4 +216,42 @@ describe("typecheck", function () {
     expect(typecheck.check("numcontainer.zero()", neg)).toBe(false);
   });
 
+  it("creates copy of its state that is not affected by future changes", function () {
+    var S = "ok";
+    typecheck.define("copied", "string");
+    var tc = typecheck.copy();
+    typecheck.define("not_copied", "string");
+    tc.define("not_in_orig", "string");
+
+    expect(typecheck.check("copied", S)).toBe(true);
+    expect(       tc.check("copied", S)).toBe(true);
+
+    expect(typecheck.check("not_copied", S)).toBe(true);
+    expect(function () {
+                  tc.check("not_copied", S);
+    }).toThrow();
+
+    expect(function () {
+      typecheck.check("not_in_orig", S);
+    }).toThrow();
+    expect(  tc.check("not_in_orig", S)).toBe(true);
+  });
+
+  it("parses default definition when default object is passed", function () {
+    var type = {
+      "hello":"string //default: 'trotinetka'",
+      "age":  "number //default: 18"
+    };
+
+    var expected = {
+      _: {
+        "hello": "trotinetka",
+        "age": 18
+      }
+    };
+
+    var defaultVal = {};
+    typecheck.define("defaultTest", type, {}, defaultVal);
+    expect(defaultVal).toEqual(expected);
+  });
 });

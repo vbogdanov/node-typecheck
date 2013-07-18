@@ -3,7 +3,21 @@ if (typeof define !== 'function') {
 }
 
 define([], function () {
-  return function () {
+
+  var FORBIDDEN_TYPENAMES = ["__proto__", "prototype", "__", "", "hasOwnProperty"]; //add others here
+  var DEFAULT_STRING = "//default:";
+
+  function handleDefaultEval(evalString, _default) {
+    var index = evalString.indexOf(DEFAULT_STRING);
+    if (index === -1) {
+      _default._ = null;
+      return;
+    }
+    var def = evalString.substr(index + DEFAULT_STRING.length);
+    _default._ = eval(def);
+  }
+
+  return function createTC() {
     var registry = Object.create(null);
     var tc = {};
     /**
@@ -15,7 +29,8 @@ define([], function () {
      * argument1 - an object defining the type/type name
      * returns a function f(item):boolean checking the passed type.
      */
-    tc.buildCheck = function (definition) { //returns function (item):boolean
+    tc.buildCheck = function (definition, _default) { //returns function (item):boolean
+      _default = _default || { _: null };//object with defaults
       var type = typeof definition;
       if (type === "object" && Array.isArray(definition)) {
         type = "array";
@@ -25,11 +40,11 @@ define([], function () {
         case "function":
           return definition;
         case "string":
-          return stringHandler(definition);
+          return stringHandler(definition, _default);
         case "array":
-          return arrayHandler(definition);
+          return arrayHandler(definition, _default);
         default:
-          return objectHandler(definition);
+          return objectHandler(definition, _default);
       }
     };
 
@@ -75,7 +90,7 @@ define([], function () {
      */
     tc.assert = function (type, value) {
       if (! tc.check(type, value)) {
-        throw "Wrong Type";
+        throw new Error("Wrong Type");
       }
     };
 
@@ -98,10 +113,10 @@ define([], function () {
 
       </code>
      */
-    tc.define = function (name, definition, limitations) {
+    tc.define = function (name, definition, limitations, _default) {
       registry[name] = {
-        isInstance: tc.buildCheck(definition),
-        constraints: limitations
+        isInstance: tc.buildCheck(definition, _default),
+        constraints: limitations || null
       };
     };
 
@@ -110,15 +125,35 @@ define([], function () {
       *
       */
     tc.defineConstraint = function (name, limitName, limitFn) {
+      tc.assert("typename", name);
       var typeDesc = registry[name];
-      if (tc.none(typeDesc)) throw "Unknown Type: " + name;
+      if (tc.none(typeDesc)) throw new Error("Unknown Type: " + name);
       typeDesc.constraints = typeDesc.constraints || Object.create(null);
       typeDesc.constraints[limitName] = limitFn;
+    };
+
+    tc.copy = function () {
+      var newtc = createTC();
+      for (var k in registry) {
+        var def = registry[k];
+        newtc.define(k, def.isInstance, copyProperties(def.constraints));
+      }
+      return newtc;
     };
 
     Object.freeze(tc);
     registerBaseTypes(tc);
     return tc;
+
+    function copyProperties(obj, res) {
+      if(tc.none(res)) {
+        res = Object.create(null);
+      }
+      for (var k in obj) {
+        res[k] = obj[k];
+      }
+      return res;
+    }
 
     function defaultObjectCheck(item) {
       return !!item; //not undefined or null
@@ -132,14 +167,17 @@ define([], function () {
       return true;
     }
 
-    function objectHandler(descr) {
+    function objectHandler(descr, _default) {
+      _default._ = {}; //for unit tests sake. isEqual does not work without Object.prototype
       var alter = Object.create(null);
       var objCheck = descr.__ ? tc.buildCheck(descr.__): defaultObjectCheck;
 
       for (var key in descr) {
         if(key === "__")
           continue;
-        alter[key] = tc.buildCheck(descr[key]);
+        var def = { _: null };
+        alter[key] = tc.buildCheck(descr[key], def);
+        _default._[key] = def._;
       }
       return function (item) {
         return (! tc.none(item)) && objCheck(item) && propertiesCheck(alter, item);
@@ -157,8 +195,8 @@ define([], function () {
       return true;
     }
 
-    function arrayHandler(definition) {
-      var arrayLimits = tc.buildCheck("array" + definition[0]);
+    function arrayHandler(definition, _default) {
+      var arrayLimits = tc.buildCheck("array" + definition[0],  _default);
       var alter = [];
       for (var i = 1; i < definition.length; i ++) {
         alter.push(tc.buildCheck(definition[i]));
@@ -179,17 +217,27 @@ define([], function () {
       return true;
     }
 
-    function stringHandler (definition) {
-      var limitationsIndex = definition.indexOf(".");
-      if (limitationsIndex === -1) limitationsIndex = definition.length;
+    function inString(str, search) {
+      return str.indexOf(search) !== -1;
+    }
+
+    function stringHandler (definition, _default) {
+      var limitationsIndex = definition.length;
+      if (inString(definition, DEFAULT_STRING)) {
+        limitationsIndex = definition.indexOf(DEFAULT_STRING);
+      }
+      if (inString(definition, ".")) {
+        limitationsIndex = definition.indexOf(".");
+      }
       var typeName = definition.substr(0, limitationsIndex);
       //in case the string starts with .
       if (! typeName) typeName = "object";
       var evalString = limitationsIndex < definition.length? definition.substr(limitationsIndex): "";
+      handleDefaultEval(evalString, _default);
 
       return function (item) {
         var type = registry[typeName];
-        if (typeof type === "undefined") throw "Unknown Type: " + typeName;
+        if (typeof type === "undefined") throw new Error("Unknown Type: " + typeName);
 
         var EVALED = Object.create(type.constraints);
         EVALED.value = item;
@@ -244,6 +292,14 @@ define([], function () {
       tc.define("function",
         function (item) {
           return typeof item === "function";
+        },
+        {
+          args: function (count) { return this.value.length === count; }
+        });
+
+      tc.define("typename",
+        function (item) {
+          return tc.check("string", item) && FORBIDDEN_TYPENAMES.indexOf(item) === -1;
         },
         {
           args: function (count) { return this.value.length === count; }
