@@ -273,7 +273,13 @@ define([], function () {
         },
         {
           notEmpty: function () { return this.value.length > 0; },
-          exists: function () { return !!this.value; }
+          exists: function () { return !!this.value; },
+          size: function(from, to) {
+            if (tc.none(to))
+              to = from;
+            var l = this.value.length;
+            return from <= l && l <= to;
+          }
         });
 
       tc.define("number",
