@@ -1,5 +1,5 @@
 {
-  "name": "typechecker",
+  "name": "constraints",
   "version": "0.0.1",
   "description": "",
   "main": "index.js",
@@ -14,6 +14,11 @@
     "jasmine-node": "latest",
     "jshint": "latest"
   },
+  "keywords": [
+    "typecheck",
+    "types",
+    "type definition"
+  ],
   "repository": "git@github.com:vbogdanov/node-typecheck.git",
   "author": "Valeri Bogdanov",
   "license": "BSD"
