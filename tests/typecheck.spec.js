@@ -294,6 +294,48 @@ describe("typecheck", function () {
     }).toThrow();
   });
 
+  it("assert multiple arguments at once, ignoring those not described", function () {
+    function test(a, b, c) {
+      typecheck.args("string", "number", arguments);
+    }
+    expect(function () {
+      test("aha", 5, true);
+    }).not.toThrow();
+    expect(function () {
+      test("aha", "5", "true");
+    }).toThrow();
+  });
+
+  it("assert multiple arguments at once, expecting existing for those described as empty string", function () {
+    function test(a, b, c) {
+      typecheck.args("string", "", "boolean", arguments);
+    }
+    expect(function () {
+      test("aha", 5, true);
+    }).not.toThrow();
+    expect(function () {
+      test("aha", null, true);
+    }).toThrow();
+    expect(function () {
+      test("aha", "5", "true");
+    }).toThrow();
+  });
+
+  it("assert multiple arguments at once, ignoring those described as null", function () {
+    function test(a, b, c) {
+      typecheck.args("string", null, "boolean", arguments);
+    }
+    expect(function () {
+      test("aha", 5, true);
+    }).not.toThrow();
+    expect(function () {
+      test("aha", null, true);
+    }).not.toThrow();
+    expect(function () {
+      test("aha", "5", "true");
+    }).toThrow();
+  });
+
   it("performs fast enough", function (next) {
     var SlowType = {
       "array": [".size(2)", "number"],

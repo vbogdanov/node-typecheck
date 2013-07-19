@@ -11,6 +11,7 @@ define(["extend", "util"], function (extend, util) {
 
   var FORBIDDEN_TYPENAMES = ["__proto__", "prototype", "__", "", "hasOwnProperty"]; //add others here
   var DEFAULT_STRING = "|";
+  var TRUE_FN = function (item) { return true; };
 
   function handleDefaultEval(evalString, _default) {
     var data = evalString.split(DEFAULT_STRING);
@@ -38,11 +39,16 @@ define(["extend", "util"], function (extend, util) {
     tc.buildCheck = function (definition, _default) { //returns function (item):boolean
       _default = _default || { _: null };//object with defaults
       var type = typeof definition;
+      if (definition === null) {
+        type = "null";
+      }
       if (type === "object" && Array.isArray(definition)) {
         type = "array";
       }
 
       switch (type) {
+        case "null":
+          return TRUE_FN;
         case "function":
           return definition;
         case "string":

@@ -1,6 +1,6 @@
 {
   "name": "constraints",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A type checker, that allows definition of additional types and constraints over them, checking objects against types and extension with default values before checks",
   "main": "index.js",
   "scripts": {
