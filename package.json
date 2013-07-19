@@ -1,14 +1,15 @@
 {
   "name": "constraints",
-  "version": "0.0.1",
-  "description": "",
+  "version": "0.0.2",
+  "description": "A type checker, that allows definition of additional types and constraints over them, checking objects against types and extension with default values before checks",
   "main": "index.js",
   "scripts": {
     "test": "jasmine-node tests/"
   },
   "dependencies":{
     "requirejs":"2.1.8",
-    "amdefine":"0.0.5"
+    "amdefine":"0.0.5",
+    "extend":"1.1.3"
   },
   "devDependencies": {
     "jasmine-node": "latest",

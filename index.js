@@ -1,20 +1,26 @@
+/* jshint globalstrict: true */
+/* global require: false */
+/* global module: true */
+"use strict";
+
 if (typeof define !== 'function') {
     var define = require('amdefine')(module);
 }
 
-define([], function () {
+define(["extend", "util"], function (extend, util) {
 
   var FORBIDDEN_TYPENAMES = ["__proto__", "prototype", "__", "", "hasOwnProperty"]; //add others here
-  var DEFAULT_STRING = "//default:";
+  var DEFAULT_STRING = "|";
 
   function handleDefaultEval(evalString, _default) {
-    var index = evalString.indexOf(DEFAULT_STRING);
-    if (index === -1) {
+    var data = evalString.split(DEFAULT_STRING);
+    if (data.length === 1) {
       _default._ = null;
-      return;
+      return data[0];
     }
-    var def = evalString.substr(index + DEFAULT_STRING.length);
+    var def = data[1];
     _default._ = eval(def);
+    return data[0];
   }
 
   return function createTC() {
@@ -90,7 +96,7 @@ define([], function () {
      */
     tc.assert = function (type, value) {
       if (! tc.check(type, value)) {
-        throw new Error("Wrong Type");
+        throw new Error("Wrong Type:[" + type + "] for value [" + util.inspect(value) + "]");
       }
     };
 
@@ -118,7 +124,8 @@ define([], function () {
       var _default = {};
       registry[name] = {
         isInstance: tc.buildCheck(definition, _default),
-        constraints: limitations || null
+        constraints: limitations || null,
+        defaults: _default._
       };
       return _default._;
     };
@@ -135,11 +142,26 @@ define([], function () {
       typeDesc.constraints[limitName] = limitFn;
     };
 
+    tc.defineDefaults = function (name, defaults) {
+      if(registry[name])
+        registry[name].defaults = defaults;
+    };
+
+    tc.extend = function (typename, object, deep) {
+      deep = deep || false; //ensure true or false
+      var defaults = registry[typename]? registry[typename].defaults: {};
+      var actual = Object.create(null);
+      actual = extend(deep, actual, defaults, object);
+      tc.assert(typename, actual);
+      return actual;
+    };
+
     tc.copy = function () {
       var newtc = createTC();
       for (var k in registry) {
         var def = registry[k];
         newtc.define(k, def.isInstance, copyProperties(def.constraints));
+        newtc.defineDefaults(k, def.defaults);
       }
       return newtc;
     };
@@ -209,15 +231,15 @@ define([], function () {
       };
     }
 
-    function evaluate(evalString, EVALED) {
+    function buildEvaluate(evalString, EVALED) {
       var calls = evalString.split(".");
+      var res = "return true ";
       for (var i = 0; i < calls.length; i ++) {
         var str = calls[i];
         if(! str) continue;
-        var res = eval("EVALED." + str);
-        if (!res) return false;
+        res += "&& arguments[0]." + str;
       }
-      return true;
+      return new Function(res + ";");
     }
 
     function inString(str, search) {
@@ -232,19 +254,20 @@ define([], function () {
       if (inString(definition, ".")) {
         limitationsIndex = definition.indexOf(".");
       }
-      var typeName = definition.substr(0, limitationsIndex);
+      var typeName = definition.substr(0, limitationsIndex).trim();
       //in case the string starts with .
       if (! typeName) typeName = "object";
       var evalString = limitationsIndex < definition.length? definition.substr(limitationsIndex): "";
-      handleDefaultEval(evalString, _default);
-
+      //bad function, does two things
+      evalString = handleDefaultEval(evalString, _default);
+      var evaluate = buildEvaluate(evalString);
       return function (item) {
         var type = registry[typeName];
         if (typeof type === "undefined") throw new Error("Unknown Type: " + typeName);
 
         var EVALED = Object.create(type.constraints);
         EVALED.value = item;
-        return (! tc.none(item)) && type.isInstance(item) && evaluate(evalString, EVALED);
+        return (! tc.none(item)) && type.isInstance(item) && evaluate(EVALED);
       };
     }
 

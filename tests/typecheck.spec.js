@@ -239,8 +239,8 @@ describe("typecheck", function () {
 
   it("parses default definition when default object is passed", function () {
     var type = {
-      "hello":"string //default: 'trotinetka'",
-      "age":  "number //default: 18"
+      "hello":"string | 'trotinetka'",
+      "age":  "number | 18"
     };
 
     var expected = {
@@ -250,5 +250,51 @@ describe("typecheck", function () {
 
     var defaultVal = typecheck.define("defaultTest", type, {});
     expect(defaultVal).toEqual(expected);
+  });
+
+  it("parses default definition and stores it to be used with extend", function () {
+    var type = {
+      "hello":"string | 'trotinetka'",
+      "age":  "number | 18",
+      "name": "string"
+    };
+
+    var expected = {
+      "hello": "ala",
+      "age": 18,
+      "name": "Ivan"
+    };
+
+    var passed = {
+      "hello": "ala",
+      "name": "Ivan"
+    };
+
+    typecheck.define("extendTest", type);
+
+    var result = typecheck.extend("extendTest", passed);
+    expect(result).toEqual(expected);
+  });
+
+  it("performs fast enough", function (next) {
+    var SlowType = {
+      "array": [".size(2)", "number"],
+      "name":"string",
+      "age":"number",
+      "go":"function"
+    };
+
+    var match = {
+      "array": [1, 2],
+      "name":"Ivan",
+      "age":22,
+      "go": function (abc) {}
+    };
+
+    typecheck.define("slowtype", SlowType, {});
+    for (var i = 0; i < 5*10000; i ++) {
+      typecheck.assert("slowtype", match);
+    }
+    next();
   });
 });
