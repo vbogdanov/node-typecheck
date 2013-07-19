@@ -306,9 +306,9 @@ describe("typecheck", function () {
     }).toThrow();
   });
 
-  it("assert multiple arguments at once, expecting existing for those described as empty string", function () {
+  it("assert multiple arguments at once, expecting existing for those described as '.exists()'", function () {
     function test(a, b, c) {
-      typecheck.args("string", "", "boolean", arguments);
+      typecheck.args("string", ".exists()", "boolean", arguments);
     }
     expect(function () {
       test("aha", 5, true);
@@ -334,6 +334,21 @@ describe("typecheck", function () {
     expect(function () {
       test("aha", "5", "true");
     }).toThrow();
+  });
+
+  it("stores can exist types under names", function () {
+    typecheck.define("fn?", typecheck.noneOr("function"));
+    var Null = null;
+    var Undef;
+    var Fn = function () {};
+
+    expect(typecheck.check("fn?", Null)).toBe(true);
+    expect(typecheck.check("fn?", Undef)).toBe(true);
+    expect(typecheck.check("fn?", Fn)).toBe(true);
+
+    expect(typecheck.check("function", Null)).toBe(false);
+    expect(typecheck.check("function", Undef)).toBe(false);
+    expect(typecheck.check("function", Fn)).toBe(true);
   });
 
   it("performs fast enough", function (next) {

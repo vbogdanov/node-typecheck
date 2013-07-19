@@ -176,7 +176,7 @@ define(["extend", "util"], function (extend, util) {
       var arg = arguments[arguments.length - 1];
       for (var i = 0; i < arguments.length - 1; i ++) {
         if (! tc.check(arguments[i], arg[i])) {
-          throw new Error("InvalidArgument(" + arguments[i] + ":" + arg[i] + ")");
+          throw new Error("InvalidArgument(" + arguments[i] + ":" + util.inspect(arg[i]) + ")");
         }
       }
     };
@@ -282,7 +282,7 @@ define(["extend", "util"], function (extend, util) {
 
         var EVALED = Object.create(type.constraints);
         EVALED.value = item;
-        return (! tc.none(item)) && type.isInstance(item) && evaluate(EVALED);
+        return type.isInstance(item) && evaluate(EVALED);
       };
     }
 
@@ -344,7 +344,7 @@ define(["extend", "util"], function (extend, util) {
 
       tc.define("regexp",
         function (item) {
-          return item.constructor === RegExp;
+          return (!tc.none(item)) && item.constructor === RegExp;
         },
         {});
 
