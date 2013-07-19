@@ -24,6 +24,12 @@ describe("typecheck", function () {
     expect(typecheck.check("date", new Date())) .toBe(true);
     expect(typecheck.check("date", "2000-10-10")).toBe(false);
 
+    expect(typecheck.check("boolean", true)) .toBe(true);
+    expect(typecheck.check("boolean", "true")).toBe(false);
+
+    expect(typecheck.check("regexp", /.*/)) .toBe(true);
+    expect(typecheck.check("regexp", "/.*/")).toBe(false);
+
     var myfn = function (a, b, c) {};
     expect(typecheck.check("function", myfn))   .toBe(true);
     expect(typecheck.check("function", 5))      .toBe(false);
@@ -274,6 +280,18 @@ describe("typecheck", function () {
 
     var result = typecheck.extend("extendTest", passed);
     expect(result).toEqual(expected);
+  });
+
+  it("assert multiple arguments at once", function () {
+    function test(a, b, c) {
+      typecheck.args("string", "number", "boolean", arguments);
+    }
+    expect(function () {
+      test("aha", 5, true);
+    }).not.toThrow();
+    expect(function () {
+      test("aha", "5", "true");
+    }).toThrow();
   });
 
   it("performs fast enough", function (next) {

@@ -166,6 +166,15 @@ define(["extend", "util"], function (extend, util) {
       return newtc;
     };
 
+    tc.args = function () {
+      var arg = arguments[arguments.length - 1];
+      for (var i = 0; i < arguments.length - 1; i ++) {
+        if (! tc.check(arguments[i], arg[i])) {
+          throw new Error("InvalidArgument(" + arguments[i] + ":" + arg[i] + ")");
+        }
+      }
+    };
+
     Object.freeze(tc);
     registerBaseTypes(tc);
     return tc;
@@ -320,6 +329,18 @@ define(["extend", "util"], function (extend, util) {
         {
 
         });
+
+      tc.define("boolean",
+        function (item) {
+          return typeof item === "boolean";
+        },
+        {});
+
+      tc.define("regexp",
+        function (item) {
+          return item.constructor === RegExp;
+        },
+        {});
 
       tc.define("function",
         function (item) {
