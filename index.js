@@ -1,6 +1,3 @@
-/* jshint globalstrict: true */
-/* global require: false */
-/* global module: true */
 "use strict";
 
 if (typeof define !== 'function') {
