@@ -4,7 +4,7 @@ if (typeof define !== 'function') {
     var define = require('amdefine')(module);
 }
 
-define(['extend', 'util'], function (extend, util) {
+define(['extend'], function (extend) {
 
   var FORBIDDEN_TYPENAMES = ['__proto__', 'prototype', '__', '', 'hasOwnProperty']; //add others here
   var DEFAULT_STRING = '|';
@@ -99,7 +99,7 @@ define(['extend', 'util'], function (extend, util) {
      */
     tc.assert = function (type, value) {
       if (! tc.check(type, value)) {
-        throw new Error('Wrong Type:[' + type + '] for value [' + util.inspect(value) + ']');
+        throw new Error('Wrong Type:[' + type + '] for value [' + value + ']');
       }
     };
 
@@ -173,7 +173,7 @@ define(['extend', 'util'], function (extend, util) {
       var arg = arguments[arguments.length - 1];
       for (var i = 0; i < arguments.length - 1; i ++) {
         if (! tc.check(arguments[i], arg[i])) {
-          throw new Error('InvalidArgument(expected:' + arguments[i] + ', actual:' + util.inspect(arg[i]) + ')');
+          throw new Error('InvalidArgument(expected:' + arguments[i] + ', actual:' + arg[i] + ')');
         }
       }
     };
