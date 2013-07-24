@@ -1,13 +1,13 @@
-"use strict";
+'use strict';
 
 if (typeof define !== 'function') {
     var define = require('amdefine')(module);
 }
 
-define(["extend", "util"], function (extend, util) {
+define(['extend', 'util'], function (extend, util) {
 
-  var FORBIDDEN_TYPENAMES = ["__proto__", "prototype", "__", "", "hasOwnProperty"]; //add others here
-  var DEFAULT_STRING = "|";
+  var FORBIDDEN_TYPENAMES = ['__proto__', 'prototype', '__', '', 'hasOwnProperty']; //add others here
+  var DEFAULT_STRING = '|';
   var TRUE_FN = function (item) { return true; };
 
   function handleDefaultEval(evalString, _default) {
@@ -37,20 +37,20 @@ define(["extend", "util"], function (extend, util) {
       _default = _default || { _: null };//object with defaults
       var type = typeof definition;
       if (definition === null) {
-        type = "null";
+        type = 'null';
       }
-      if (type === "object" && Array.isArray(definition)) {
-        type = "array";
+      if (type === 'object' && Array.isArray(definition)) {
+        type = 'array';
       }
 
       switch (type) {
-        case "null":
+        case 'null':
           return TRUE_FN;
-        case "function":
+        case 'function':
           return definition;
-        case "string":
+        case 'string':
           return stringHandler(definition, _default);
-        case "array":
+        case 'array':
           return arrayHandler(definition, _default);
         default:
           return objectHandler(definition, _default);
@@ -71,7 +71,7 @@ define(["extend", "util"], function (extend, util) {
      * returns true if value is null or undefined
      */
     tc.none = function (value) {
-      return typeof value === "undefined" || value === null;
+      return typeof value === 'undefined' || value === null;
     };
 
     /**
@@ -90,7 +90,7 @@ define(["extend", "util"], function (extend, util) {
      * <code>
 
       if (! typecheck.check(type, value)) {
-        throw "Wrong Type";
+        throw 'Wrong Type';
       }
 
       </code>
@@ -99,7 +99,7 @@ define(["extend", "util"], function (extend, util) {
      */
     tc.assert = function (type, value) {
       if (! tc.check(type, value)) {
-        throw new Error("Wrong Type:[" + type + "] for value [" + util.inspect(value) + "]");
+        throw new Error('Wrong Type:[' + type + '] for value [' + util.inspect(value) + ']');
       }
     };
 
@@ -112,7 +112,7 @@ define(["extend", "util"], function (extend, util) {
      * example:
      * <code>
 
-      typecheck.define("array",
+      typecheck.define('array',
         function (item) {
           return Array.isArray(item);
         },
@@ -138,9 +138,9 @@ define(["extend", "util"], function (extend, util) {
       *
       */
     tc.defineConstraint = function (name, limitName, limitFn) {
-      tc.assert("typename", name);
+      tc.assert('typename', name);
       var typeDesc = registry[name];
-      if (tc.none(typeDesc)) throw new Error("Unknown Type: " + name);
+      if (tc.none(typeDesc)) throw new Error('Unknown Type: ' + name);
       typeDesc.constraints = typeDesc.constraints || Object.create(null);
       typeDesc.constraints[limitName] = limitFn;
     };
@@ -173,9 +173,25 @@ define(["extend", "util"], function (extend, util) {
       var arg = arguments[arguments.length - 1];
       for (var i = 0; i < arguments.length - 1; i ++) {
         if (! tc.check(arguments[i], arg[i])) {
-          throw new Error("InvalidArgument(" + arguments[i] + ":" + util.inspect(arg[i]) + ")");
+          throw new Error('InvalidArgument(expected:' + arguments[i] + ', actual:' + util.inspect(arg[i]) + ')');
         }
       }
+    };
+
+    tc.describe = function(_prototype) {
+      if(tc.none(_prototype))
+        return tc.buildCheck('object');
+      var ts = 'string,array,boolean,date,number,regexp,function'.split(',');
+      for (var i = 0; i < ts.length; i ++) {
+        var fn = tc.buildCheck(ts[i]);
+        if (fn(_prototype)) return fn;
+      }
+      //object
+      var typedef = Object.create(null);
+      for(var key in _prototype) {
+        typedef[key] = tc.describe(_prototype[key]);
+      }
+      return tc.buildCheck(typedef);
     };
 
     Object.freeze(tc);
@@ -210,7 +226,7 @@ define(["extend", "util"], function (extend, util) {
       var objCheck = descr.__ ? tc.buildCheck(descr.__): defaultObjectCheck;
 
       for (var key in descr) {
-        if(key === "__")
+        if(key === '__')
           continue;
         var def = { _: null };
         alter[key] = tc.buildCheck(descr[key], def);
@@ -233,7 +249,7 @@ define(["extend", "util"], function (extend, util) {
     }
 
     function arrayHandler(definition, _default) {
-      var arrayLimits = tc.buildCheck("array" + definition[0],  _default);
+      var arrayLimits = tc.buildCheck('array' + definition[0],  _default);
       var alter = [];
       for (var i = 1; i < definition.length; i ++) {
         alter.push(tc.buildCheck(definition[i]));
@@ -244,14 +260,14 @@ define(["extend", "util"], function (extend, util) {
     }
 
     function buildEvaluate(evalString, EVALED) {
-      var calls = evalString.split(".");
-      var res = "return true ";
+      var calls = evalString.split('.');
+      var res = 'return true ';
       for (var i = 0; i < calls.length; i ++) {
         var str = calls[i];
         if(! str) continue;
-        res += "&& arguments[0]." + str;
+        res += '&& arguments[0].' + str;
       }
-      return new Function(res + ";");
+      return new Function(res + ';');
     }
 
     function inString(str, search) {
@@ -263,19 +279,19 @@ define(["extend", "util"], function (extend, util) {
       if (inString(definition, DEFAULT_STRING)) {
         limitationsIndex = definition.indexOf(DEFAULT_STRING);
       }
-      if (inString(definition, ".")) {
-        limitationsIndex = definition.indexOf(".");
+      if (inString(definition, '.')) {
+        limitationsIndex = definition.indexOf('.');
       }
       var typeName = definition.substr(0, limitationsIndex).trim();
       //in case the string starts with .
-      if (! typeName) typeName = "object";
-      var evalString = limitationsIndex < definition.length? definition.substr(limitationsIndex): "";
+      if (! typeName) typeName = 'object';
+      var evalString = limitationsIndex < definition.length? definition.substr(limitationsIndex): '';
       //bad function, does two things
       evalString = handleDefaultEval(evalString, _default);
       var evaluate = buildEvaluate(evalString);
       return function (item) {
         var type = registry[typeName];
-        if (typeof type === "undefined") throw new Error("Unknown Type: " + typeName);
+        if (typeof type === 'undefined') throw new Error('Unknown Type: ' + typeName);
 
         var EVALED = Object.create(type.constraints);
         EVALED.value = item;
@@ -284,25 +300,25 @@ define(["extend", "util"], function (extend, util) {
     }
 
     function registerBaseTypes(tc) {
-      tc.define("object",
+      tc.define('object',
         function (item) {
           return true;
         },
         {
-          defined: function () { return typeof this.value !== "undefined"; },
+          defined: function () { return typeof this.value !== 'undefined'; },
           exists: function () { return !!this.value; }
         });
 
-      tc.define("string",
+      tc.define('string',
         function (item) {
-          return typeof item === "string";
+          return typeof item === 'string';
         },
         {
           notEmpty: function () { return this.exists() && (!!this.value.trim()); },
           exists: function () { return !!this.value; }
         });
 
-      tc.define("array",
+      tc.define('array',
         function (item) {
           return Array.isArray(item);
         },
@@ -317,15 +333,15 @@ define(["extend", "util"], function (extend, util) {
           }
         });
 
-      tc.define("number",
+      tc.define('number',
         function (item) {
-          return typeof item === "number";
+          return typeof item === 'number';
         },
         {
 
         });
 
-      tc.define("date",
+      tc.define('date',
         function (item) {
           return Date.prototype.isPrototypeOf(item);
         },
@@ -333,29 +349,29 @@ define(["extend", "util"], function (extend, util) {
 
         });
 
-      tc.define("boolean",
+      tc.define('boolean',
         function (item) {
-          return typeof item === "boolean";
+          return typeof item === 'boolean';
         },
         {});
 
-      tc.define("regexp",
+      tc.define('regexp',
         function (item) {
           return (!tc.none(item)) && item.constructor === RegExp;
         },
         {});
 
-      tc.define("function",
+      tc.define('function',
         function (item) {
-          return typeof item === "function";
+          return typeof item === 'function';
         },
         {
           args: function (count) { return this.value.length === count; }
         });
 
-      tc.define("typename",
+      tc.define('typename',
         function (item) {
-          return tc.check("string", item) && FORBIDDEN_TYPENAMES.indexOf(item) === -1;
+          return tc.check('string', item) && FORBIDDEN_TYPENAMES.indexOf(item) === -1;
         },
         {
           args: function (count) { return this.value.length === count; }
