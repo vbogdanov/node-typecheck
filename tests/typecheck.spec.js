@@ -8,416 +8,67 @@
 /* jshint maxstatements: 30 */
 'use strict';
 
-var typecheck = require('../index.js')();
+var T = require('../src/typecheck.js');
 
-describe('typecheck', function () {
-  it('checks primitives successfully', function () {
-    expect(typecheck.check('array', []))        .toBe(true);
-    expect(typecheck.check('array', arguments)) .toBe(false);
+describe('constraints', function () {
 
-    expect(typecheck.check('number', 3.14))     .toBe(true);
-    expect(typecheck.check('number', '3.14'))   .toBe(false);
-
-    expect(typecheck.check('string', 'hi'))     .toBe(true);
-    expect(typecheck.check('string', 5))        .toBe(false);
-
-    expect(typecheck.check('date', new Date())) .toBe(true);
-    expect(typecheck.check('date', '2000-10-10')).toBe(false);
-
-    expect(typecheck.check('boolean', true)) .toBe(true);
-    expect(typecheck.check('boolean', 'true')).toBe(false);
-
-    expect(typecheck.check('regexp', /.*/)) .toBe(true);
-    expect(typecheck.check('regexp', '/.*/')).toBe(false);
-
-    var myfn = function (a, b, c) {};
-    expect(typecheck.check('function', myfn))   .toBe(true);
-    expect(typecheck.check('function', 5))      .toBe(false);
-    expect(typecheck.check('function.args(3)', myfn)).toBe(true);
+  it('is a constructor function and namespace containing certain properties and functions', function () {
+    expect(typeof T).toEqual('function');
+    expect(T.create).toEqual(jasmine.any(Function));
+    expect(T.prototype).toEqual(jasmine.any(Object));
+    expect(T.hashType).toEqual(jasmine.any(Function));
+    expect(T.tupleType).toEqual(jasmine.any(Function));
+    expect(T.array).toEqual(jasmine.any(T));
+    expect(T.number).toEqual(jasmine.any(T));
+    expect(T.string).toEqual(jasmine.any(T));
+    expect(T.fn).toEqual(jasmine.any(T));
+    expect(T.undef).toEqual(jasmine.any(T));
+    expect(T.null).toEqual(jasmine.any(T));
+    expect(T.none).toEqual(jasmine.any(T));
+    expect(T.void).toBe(T.undef);
   });
 
-  it('checks arrays based on type definition', function () {
-    expect(typecheck.check([''], [])).toBe(true);
+  describe('instance', function () {
+    it('creates new type object with the given check function', function () {
+      var MyType = new T(function (value) {
+        return value === 5;
+      });
 
-    expect(typecheck.check(['.notEmpty()'], [])).toBe(false);
-    expect(typecheck.check(['.notEmpty()'], [1])).toBe(true);
-
-    var undef;
-    expect(typecheck.check(['.exists()'], null )).toBe(false);
-    expect(typecheck.check(['.exists()'], undef)).toBe(false);
-    expect(typecheck.check(['.exists()'], []   )).toBe(true);
-
-    expect(typecheck.check(['', 'number'], [1, 2, 3])).toBe(true);
-    expect(typecheck.check(['', 'string'], ['h', '2', '3'])).toBe(true);
-    expect(typecheck.check(['', 'number', 'string'], [1, '2', 3])).toBe(true);
-    expect(typecheck.check(['', 'number', 'string'], ['1', '2', 3])).toBe(false);
-    expect(typecheck.check(
-      ['', 'number', 'string', 'date', ['', 'array']],
-      [1, '2', new Date(), [[]]]
-    )).toBe(true);
-
-    expect(typecheck.check(
-      ['', 'number', 'string', 'date', ['.notEmpty()']],
-      [1, '2', new Date(), [1]]
-    )).toBe(true);
+      expect(MyType.is(5)).toBe(true);
+    });
   });
 
-  it('checks object properties as well as object existance', function () {
-    var TypeA = {
-      'hello':'string.exists()',
-      'greet':'function.args(1)'
-    };
-    var TypeB = {
-      'bye':'string.exists()',
-      'sayit':'function.args(1)'
-    };
-
-    var A = {
-      'hello':'Hello my dear friend, ',
-      'greet': function (name) {
-        console.log(this.hello + name);
-      }
-    };
-    var B = {
-      'bye':'Goodbye, ',
-      'sayit':function (name) {
-        console.log(this.bye + name);
-      }
-    };
-
-    expect(typecheck.check(TypeA, A)).toBe(true);
-    expect(typecheck.check(TypeB, A)).toBe(false);
-    expect(typecheck.check(TypeA, B)).toBe(false);
-    expect(typecheck.check(TypeB, B)).toBe(true);
+  describe('hashType', function () {
+    //TODO:
   });
 
-  it('checks object properties recursively', function () {
-    var TypeC = {
-      'simple': 'number',
-      'complicated': {
-        'hello': 'string'
-      },
-      'anarray': ['.notEmpty()', 'number']
-    };
-    var C = {
-      'simple': 3,
-      'complicated': {
-        'hello': 'world'
-      },
-      'anarray': [1, 2, 3]
-    };
-
-    expect(typecheck.check(TypeC, C)).toBe(true);
-
-    var D = {
-      'simple': 3,
-      'complicated': {
-        'hello': 5
-      },
-      'anarray': [1, 2, 3]
-    };
-    expect(typecheck.check(TypeC, D)).toBe(false);
+  describe('tupleType', function () {
+    //TODO:
   });
 
-  it('throws exception when assert is invoked with not fulfilling argments', function () {
-    expect(function () {
-      typecheck.assert('number', '5');
-    }).toThrow();
-    expect(function () {
-      typecheck.assert('number', 5);
-    }).not.toThrow();
+  describe('array', function () {
+    //TODO:
   });
 
-  it('matches possible nulls or undefined using noneOr', function () {
-    var StrictType = {
-      'simple': 'number',
-      'complicated': {
-        'hello': 'string'
-      },
-      'anarray': ['.notEmpty()', 'number']
-    };
-
-    var NoneType = {
-      'simple': 'number',
-      'complicated': {
-        'hello': typecheck.noneOr('string')
-      },
-      'anarray': ['.notEmpty()', 'number']
-    };
-
-    var E = {
-      'simple': 3,
-      'anarray': [1, 2, 3]
-    };
-
-    var E1 = Object.create(E);
-    E1.complicated = { 'hello': 'world' };
-    expect(typecheck.check(StrictType, E1)).toBe(true);
-    expect(typecheck.check(NoneType, E1)).toBe(true);
-
-    var E2 = Object.create(E);
-    E2.complicated = {}; //undefined
-    expect(typecheck.check(StrictType, E2)).toBe(false);
-    expect(typecheck.check(NoneType, E2)).toBe(true);
-
-    var E3 = Object.create(E);
-    E3.complicated = { 'hello': null };
-    expect(typecheck.check(StrictType, E3)).toBe(false);
-    expect(typecheck.check(NoneType, E3)).toBe(true);
-
-    var E4 = Object.create(E);
-    E4.complicated = { 'hello': 4 };
-    expect(typecheck.check(StrictType, E4)).toBe(false);
-    expect(typecheck.check(NoneType, E4)).toBe(false);
+  describe('number', function () {
+    it('is true for numbers', function () {
+      expect(T.number.is(5)).toBe(true);
+    });
+    //TODO
   });
 
-  it('adds new types using typecheck.define(name, typedef, constraints)', function () {
-    var StrictType = {
-      'simple': 'number',
-      'complicated': {
-        'hello': 'string'
-      },
-      'anarray': ['.notEmpty()', 'number']
-    };
-
-    var E = {
-      'simple': 3,
-      'anarray': [1, 2, 3],
-      'complicated': { 'hello': 'world' }
-    };
-
-    typecheck.define('mytype', StrictType, {});
-
-    expect(typecheck.check('mytype', E)).toBe(true);
+  describe('string', function () {
+    //TODO
   });
 
-  it('adds new types using typecheck.define(name, typedef, constraints)', function () {
-    var NumberContainer = {
-      'value': 'number'
-    };
-
-    var constraints = {
-      positive: function () { return this.value.value > 0; },
-      negative: function () { return this.value.value < 0; }
-    };
-
-    var pos = { value: 5 };
-    var zero = { value: 0 };
-    var neg = { value: -5 };
-
-    typecheck.define('numcontainer', NumberContainer, constraints);
-
-    expect(typecheck.check('numcontainer.positive()', pos)).toBe(true);
-    expect(typecheck.check('numcontainer.positive()', zero)).toBe(false);
-    expect(typecheck.check('numcontainer.positive()', neg)).toBe(false);
-
-    expect(typecheck.check('numcontainer.negative()', pos)).toBe(false);
-    expect(typecheck.check('numcontainer.negative()', zero)).toBe(false);
-    expect(typecheck.check('numcontainer.negative()', neg)).toBe(true);
-
-    typecheck.defineConstraint('numcontainer', 'zero', function () { return this.value.value === 0; });
-
-    expect(typecheck.check('numcontainer.zero()', pos)).toBe(false);
-    expect(typecheck.check('numcontainer.zero()', zero)).toBe(true);
-    expect(typecheck.check('numcontainer.zero()', neg)).toBe(false);
+  describe('fn', function () {
+    //TODO:
   });
 
-  it('creates copy of its state that is not affected by future changes', function () {
-    var S = 'ok';
-    typecheck.define('copied', 'string');
-    var tc = typecheck.copy();
-    typecheck.define('not_copied', 'string');
-    tc.define('not_in_orig', 'string');
-
-    expect(typecheck.check('copied', S)).toBe(true);
-    expect(       tc.check('copied', S)).toBe(true);
-
-    expect(typecheck.check('not_copied', S)).toBe(true);
-    expect(function () {
-                  tc.check('not_copied', S);
-    }).toThrow();
-
-    expect(function () {
-      typecheck.check('not_in_orig', S);
-    }).toThrow();
-    expect(  tc.check('not_in_orig', S)).toBe(true);
+  describe('nones', function () {
+    //TODO:
+    
   });
 
-  it('parses default definition when default object is passed', function () {
-    var type = {
-      'hello':'string | \'trotinetka\'',
-      'age':  'number | 18'
-    };
-
-    var expected = {
-      'hello': 'trotinetka',
-      'age': 18
-    };
-
-    var defaultVal = typecheck.define('defaultTest', type, {});
-    expect(defaultVal).toEqual(expected);
-  });
-
-  it('parses default definition and stores it to be used with extend', function () {
-    var type = {
-      'hello':'string | \'trotinetka\'',
-      'age':  'number | 18',
-      'name': 'string'
-    };
-
-    var expected = {
-      'hello': 'ala',
-      'age': 18,
-      'name': 'Ivan'
-    };
-
-    var passed = {
-      'hello': 'ala',
-      'name': 'Ivan'
-    };
-
-    typecheck.define('extendTest', type);
-
-    var result = typecheck.extend('extendTest', passed);
-    expect(result).toEqual(expected);
-  });
-
-  it('assert multiple arguments at once', function () {
-    function test(a, b, c) {
-      typecheck.args('string', 'number', 'boolean', arguments);
-    }
-    expect(function () {
-      test('aha', 5, true);
-    }).not.toThrow();
-    expect(function () {
-      test('aha', '5', 'true');
-    }).toThrow();
-  });
-
-  it('assert multiple arguments at once, ignoring those not described', function () {
-    function test(a, b, c) {
-      typecheck.args('string', 'number', arguments);
-    }
-    expect(function () {
-      test('aha', 5, true);
-    }).not.toThrow();
-    expect(function () {
-      test('aha', '5', 'true');
-    }).toThrow();
-  });
-
-  it('assert multiple arguments at once, expecting existing for those described as \'.exists()\'', function () {
-    function test(a, b, c) {
-      typecheck.args('string', '.exists()', 'boolean', arguments);
-    }
-    expect(function () {
-      test('aha', 5, true);
-    }).not.toThrow();
-    expect(function () {
-      test('aha', null, true);
-    }).toThrow();
-    expect(function () {
-      test('aha', '5', 'true');
-    }).toThrow();
-  });
-
-  it('assert multiple arguments at once, ignoring those described as null', function () {
-    function test(a, b, c) {
-      typecheck.args('string', null, 'boolean', arguments);
-    }
-    expect(function () {
-      test('aha', 5, true);
-    }).not.toThrow();
-    expect(function () {
-      test('aha', null, true);
-    }).not.toThrow();
-    expect(function () {
-      test('aha', '5', 'true');
-    }).toThrow();
-  });
-
-  it('stores can exist types under names', function () {
-    typecheck.define('fn?', typecheck.noneOr('function'));
-    var Null = null;
-    var Undef;
-    var Fn = function () {};
-
-    expect(typecheck.check('fn?', Null)).toBe(true);
-    expect(typecheck.check('fn?', Undef)).toBe(true);
-    expect(typecheck.check('fn?', Fn)).toBe(true);
-
-    expect(typecheck.check('function', Null)).toBe(false);
-    expect(typecheck.check('function', Undef)).toBe(false);
-    expect(typecheck.check('function', Fn)).toBe(true);
-  });
-
-  it('performs fast enough', function (next) {
-    var SlowType = {
-      'array': ['.size(2)', 'number'],
-      'name':'string',
-      'age':'number',
-      'go':'function'
-    };
-
-    var match = {
-      'array': [1, 2],
-      'name':'Ivan',
-      'age':22,
-      'go': function (abc) {}
-    };
-
-    typecheck.define('slowtype', SlowType, {});
-    for (var i = 0; i < 5*10000; i ++) {
-      typecheck.assert('slowtype', match);
-    }
-    next();
-  });
-
-  it('builds description from existing objects', function () {
-    var primer = {
-      a: function () {},
-      b: 'string',
-      c: 5,
-      d: new Date(),
-      e: true,
-      f: null,
-      g: /.*/g,
-      h: {
-        hello:'world'
-      }
-    };
-
-    var match = {
-      a: function (a, b, c) { return a + b + c; },
-      b: 'hello',
-      c: 1,
-      d: new Date(),
-      e: false,
-      f: null,
-      g: /[0-9]+/g,
-      h: {
-        hello:'word'
-      }
-    };
-
-
-    var mismatch = {
-      a: function () {},
-      b: 'string',
-      c: 5,
-      d: new Date(),
-      e: 'true',
-      f: null,
-      g: /.*/g,
-      h: {
-        hello:'world'
-      }
-    };
-
-    var check = typecheck.describe(primer);
-    expect(typecheck.check('function', check)).toBe(true);
-    expect(check(primer)).toBe(true);
-    expect(check(match)).toBe(true);
-    expect(check(mismatch)).toBe(false);
-  });
+  //it has predefined functions and properties
 });

@@ -2,7 +2,7 @@
   "name": "constraints",
   "version": "0.0.5",
   "description": "A type checker, that allows definition of additional types and constraints over them, checking objects against types and extension with default values before checks",
-  "main": "index.js",
+  "main": "src/typecheck.js",
   "scripts": {
     "test": "jasmine-node tests/"
   },
