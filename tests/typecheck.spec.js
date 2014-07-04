@@ -33,42 +33,81 @@ describe('constraints', function () {
       var MyType = new T(function (value) {
         return value === 5;
       });
-
+      expect(MyType).toEqual(jasmine.any(T));
       expect(MyType.is(5)).toBe(true);
     });
   });
 
   describe('hashType', function () {
-    //TODO:
+    var MyType = T.hashType({
+      name: T.string.notEmpty(),
+      age:T.number.bounds(0, 130)
+    });
+    
+    expect(MyType).toEqual(jasmine.any(T));
+    
+    expect(MyType.is({
+      name: 'Peter',
+      age: 20
+    })).toBe(true);
+
+    expect(MyType.is({
+      name: '',
+      age: 20
+    })).toBe(false);
+
+    expect(MyType.is({
+      name: 'Peter',
+      age: 20,
+      bla:''
+    })).toBe(true);
+
+    expect(MyType.is({
+      name: 'Peter',
+      age: -1
+    })).toBe(false);
+
+    expect(MyType.is({
+      name: 'Peter',
+      age: 130
+    })).toBe(false);
+
   });
 
   describe('tupleType', function () {
-    //TODO:
+    var snf = T.tupleType([T.string, T.number, T.fn]);
+    expect(snf).toEqual(jasmine.any(T));
+
+    expect(snf.is([])).toBe(false);
+    expect(snf.is(['',0,function () {}])).toBe(true);
+    expect(snf.is([0, ''])).toBe(false);
+
+    var snf2 = T.tupleType([T.string, T.number.optional()]);
+    expect(snf2.is(['', 0])).toBe(true);
+    expect(snf2.is([''])).toBe(true);
+    expect(snf2.is([])).toBe(false);
   });
 
-  describe('array', function () {
-    //TODO:
-  });
+  describe('nones:', function () {
+    var a, b = 5, c = null;
 
-  describe('number', function () {
-    it('is true for numbers', function () {
-      expect(T.number.is(5)).toBe(true);
-    });
-    //TODO
-  });
-
-  describe('string', function () {
-    //TODO
-  });
-
-  describe('fn', function () {
-    //TODO:
-  });
-
-  describe('nones', function () {
-    //TODO:
+    it('undefined', function () {
+      expect(T.undef.is(a)).toBe(true);
+      expect(T.undef.is(b)).toBe(false);
+      expect(T.undef.is(c)).toBe(false);
+    })
     
+    it('null', function () {
+      expect(T.null.is(a)).toBe(false);
+      expect(T.null.is(b)).toBe(false);
+      expect(T.null.is(c)).toBe(true);
+    });
+    
+    it('null or undefined', function () {
+      expect(T.none.is(a)).toBe(true);
+      expect(T.none.is(b)).toBe(false);
+      expect(T.none.is(c)).toBe(true);
+    });
   });
 
-  //it has predefined functions and properties
 });
