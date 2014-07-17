@@ -4,7 +4,7 @@ if (typeof define !== 'function') {
     var define = require('amdefine')(module);
 }
 
-define(['./array','./string','./number', './function'], function ($array, $string, $number, $function) {
+define(['./array','./string','./number', './function', './regexp'], function ($array, $string, $number, $function, $regexp) {
 
   var exports = {};
 
@@ -80,6 +80,7 @@ define(['./array','./string','./number', './function'], function ($array, $strin
   $string(exports);
   $number(exports);
   $function(exports);
+  $regexp(exports);
   // Type type
   exports.Type = exports.hashType({
     is: exports.fn,
